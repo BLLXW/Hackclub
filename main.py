@@ -125,7 +125,8 @@ class Player(Creature):
                     for spike in spikes:
                         hideSprite(spike.sprite)
                     hideSprite(self.sprite)
-                    
+                    hideLabel(l)  
+
                     backgroundSprite = makeSprite("win.png")
                     backgroundx = screenCentre[0]
                     backgroundy = screenCentre[1]
@@ -161,7 +162,8 @@ class Saver(Creature):
             playSound(lossSound)
 
             hideSprite(Player.sprite)
-  
+            hideLabel(l)  
+
             loseScreen = makeSprite("lose.png")
             moveSprite(loseScreen, screenCentre[0], screenCentre[1], True)
             showSprite(loseScreen)
@@ -214,8 +216,8 @@ class Spikes(Creature):
     def __init__(self, x, y, size, image):
         super().__init__(x, y, size, 0, 0, image)
         self.visible = False
-        self.appearTime = random.randint(100,200)
-        self.disappearTime = random.randint(100,200)
+        self.appearTime = random.randint(50,175)
+        self.disappearTime = random.randint(50,175)
         self.timer = 0
 
     def update(self, Player):
@@ -318,7 +320,7 @@ def getPlayerName():
     hideLabel(title)
     hideSprite(backgroundSprite)
     hideTextBox(inputBox)
-    
+
 l = makeLabel("Time Alive: " + str(frameCount // 30), 20, 15, 100, fontColour='black', font='Arial', background='clear')
 showLabel(l)
 
