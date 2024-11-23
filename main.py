@@ -1,5 +1,6 @@
 from pygame_functions import *
 import math, random, time
+from leaderboardDatabase import *
 
 displayInfo = pygame.display.Info()
 userScreenWidth = displayInfo.current_w
@@ -8,9 +9,9 @@ screenSize(userScreenWidth, userScreenHeight, fullscreen=True)
 screenCentre = [userScreenWidth/2, userScreenHeight/2]
 
 backgroundSprite = makeSprite("background.png")
-bg_x = screenCentre[0]
-bg_y = screenCentre[1]
-moveSprite(backgroundSprite, bg_x, bg_y, True)
+backgroundx = screenCentre[0]
+backgroundy = screenCentre[1]
+moveSprite(backgroundSprite, backgroundx, backgroundy, True)
 showSprite(backgroundSprite)
 
 frameCount = 0
@@ -19,6 +20,7 @@ animationTime = 90
 originalSize = 100
 
 factorScale = min(userScreenWidth, userScreenHeight) / 1000  
+
 
 class Creature:
     def __init__(self, x, y, size, xspeed, yspeed, image):
@@ -48,8 +50,8 @@ class Player(Creature):
         super().__init__(x, y, size, xspeed, yspeed, image)
         transformSprite(self.sprite, 0, (self.size/600) * factorScale)
         moveSprite(self.sprite, screenCentre[0], screenCentre[1], True)
-        self.prev_x = x
-        self.prev_y = y
+        self.previousX = x
+        self.previousY = y
         
         self.minX = 0
         self.maxX = worldWidth
@@ -57,53 +59,53 @@ class Player(Creature):
         self.maxY = worldHeight
     
     def move(self):
-        global bg_x, bg_y
-        self.prev_x = self.x
-        self.prev_y = self.y
+        global backgroundx, backgroundy
+        self.previousX = self.x
+        self.previousY = self.y
         
         self.pspeed = 7 * factorScale
         moved = False
         
 
-        new_x = self.x
-        new_y = self.y
-        new_bg_x = bg_x
-        new_bg_y = bg_y
+        newX = self.x
+        newY = self.y
+        newbgX = backgroundx
+        newbgY = backgroundy
         
         if keyPressed("W"):
-            new_y = self.y - self.pspeed
-            new_bg_y = bg_y + self.pspeed
-            if new_y >= self.minY:  
-                self.y = new_y
-                bg_y = new_bg_y
+            newY = self.y - self.pspeed
+            newbgY = backgroundy + self.pspeed
+            if newY >= self.minY:  
+                self.y = newY
+                backgroundy = newbgY
                 moved = True
                 
         if keyPressed("A"):
-            new_x = self.x - self.pspeed
-            new_bg_x = bg_x + self.pspeed
-            if new_x >= self.minX:  
-                self.x = new_x
-                bg_x = new_bg_x
+            newX = self.x - self.pspeed
+            newbgX = backgroundx + self.pspeed
+            if newX >= self.minX:  
+                self.x = newX
+                backgroundx = newbgX
                 moved = True
                 
         if keyPressed("S"):
-            new_y = self.y + self.pspeed
-            new_bg_y = bg_y - self.pspeed
-            if new_y <= self.maxY: 
-                self.y = new_y
-                bg_y = new_bg_y
+            newY = self.y + self.pspeed
+            newbgY = backgroundy - self.pspeed
+            if newY <= self.maxY: 
+                self.y = newY
+                backgroundy = newbgY
                 moved = True
                 
         if keyPressed("D"):
-            new_x = self.x + self.pspeed
-            new_bg_x = bg_x - self.pspeed
-            if new_x <= self.maxX:  
-                self.x = new_x
-                bg_x = new_bg_x
+            newX = self.x + self.pspeed
+            newbgX = backgroundx - self.pspeed
+            if newX <= self.maxX:  
+                self.x = newX
+                backgroundx = newbgX
                 moved = True
             
         if moved:
-            moveSprite(backgroundSprite, bg_x, bg_y, True)
+            moveSprite(backgroundSprite, backgroundx, backgroundy, True)
     
     def checkTouch(self, spikes):
         if frameCount > 90:
@@ -123,11 +125,18 @@ class Player(Creature):
                     for spike in spikes:
                         hideSprite(spike.sprite)
                     hideSprite(self.sprite)
-                    label = makeLabel("You Won!", 100, screenCentre[0]-150, screenCentre[1]-100, fontColour='black', font='Arial', background='clear')
                     
-                    showLabel(label)
+                    backgroundSprite = makeSprite("win.png")
+                    backgroundx = screenCentre[0]
+                    backgroundy = screenCentre[1]
+                    moveSprite(backgroundSprite, backgroundx, backgroundy, True)
+                    showSprite(backgroundSprite)
                     updateDisplay()
-                    time.sleep(2)
+                    time.sleep(4)
+                    
+                    getPlayerName()
+                    showLeaderboard()
+                    
                     return True
             return False
 
@@ -153,12 +162,18 @@ class Saver(Creature):
             
             time.sleep(0.75)
             hideSprite(Player.sprite)
-            label = makeLabel("You Lost!", 100, screenCentre[0]-150, screenCentre[1]-100, 
-                            fontColour='black', font='Arial', background='clear')
-            showLabel(label)
+            
+            backgroundSprite = makeSprite("lose.png")
+            backgroundx = screenCentre[0]
+            backgroundy = screenCentre[1]
+            moveSprite(backgroundSprite, backgroundx, backgroundy, True)
+            showSprite(backgroundSprite)
+            
+            time.sleep(4)
+            
+            showLeaderboard()
+
             updateDisplay()
-            time.sleep(2)
-            end()
 
         if self.isNear(Player):
             self.speed = 6.5 * factorScale
@@ -171,14 +186,14 @@ class Saver(Creature):
        
         for spike in Spikes:
             if spike.visible and self.isNear(spike):
-                spike_xdistance = spike.x - self.x
-                spike_ydistance = spike.y - self.y
-                spikeDistance = math.sqrt(spike_xdistance ** 2 + spike_ydistance ** 2)
+                spikeXDistance = spike.x - self.x
+                spikeYDistance = spike.y - self.y
+                spikeDistance = math.sqrt(spikeXDistance ** 2 + spikeYDistance ** 2)
   
                 if spikeDistance < totalDistance:
                     if spikeDistance > 0:
-                        self.x += (spike_xdistance / spikeDistance) * self.speed
-                        self.y += (spike_ydistance / spikeDistance) * self.speed
+                        self.x += (spikeXDistance / spikeDistance) * self.speed
+                        self.y += (spikeYDistance / spikeDistance) * self.speed
 
                     if touching(self.sprite, spike.sprite):
                         hideSprite(self.sprite)
@@ -199,13 +214,13 @@ class Spikes(Creature):
     def __init__(self, x, y, size, image):
         super().__init__(x, y, size, 0, 0, image)
         self.visible = False
-        self.appear_time = random.randint(100,200)
-        self.disappear_time = random.randint(100,200)
+        self.appearTime = random.randint(100,200)
+        self.disappearTime = random.randint(100,200)
         self.timer = 0
 
     def update(self, Player):
         self.timer += 1
-        if self.timer < self.appear_time:
+        if self.timer < self.appearTime:
             if not self.visible:
                 self.x = random.randint(0, int(worldWidth))
                 self.y = random.randint(0, int(worldHeight))
@@ -222,7 +237,7 @@ class Spikes(Creature):
                     self.visible = True
                     showSprite(self.sprite) 
                 
-        elif self.timer < self.appear_time + self.disappear_time:
+        elif self.timer < self.appearTime + self.disappearTime:
             if self.visible:
                 self.visible = False
                 hideSprite(self.sprite)
@@ -237,15 +252,11 @@ worldWidth = userScreenWidth * 2.5
 worldHeight = userScreenHeight * 2.5
 
 thePlayer = Player(worldWidth/2, worldHeight/2, userScreenHeight/2, 10, 10, "Player.png")
-
-
-def boundary(thePlayer):
-    drawRect(worldWidth, worldHeight,10000,10000,"black",5)
     
 allSpikes = []
 
 for i in range(5):
-    allSpikes.append(Spikes(random.randint(0, int(worldWidth)), random.randint(0, int(worldHeight)), userScreenHeight/35, "spike.png"))
+    allSpikes.append(Spikes(random.randint(userScreenWidth, int(worldWidth)), random.randint(userScreenHeight, int(worldHeight)), userScreenHeight/35, "spike.png"))
  
 allSavers = []
 
@@ -264,9 +275,50 @@ def spawnAnimation():
             hideSprite(thePlayer.sprite)
             
     else:
-        showSprite(thePlayer.sprite)  
-
+        showSprite(thePlayer.sprite) 
         
+def showLeaderboard():
+    backgroundSprite = makeSprite("blue.png")  
+    moveSprite(backgroundSprite, screenCentre[0], screenCentre[1], True)
+    showSprite(backgroundSprite)
+
+    title = makeLabel("LEADERBOARD", 50, screenCentre[0] - 150, 50, 
+                     fontColour='white', font='Arial Black', background='clear')
+    showLabel(title)
+    
+    scores = getTopScores()
+    scoreLabels = []
+    startY = 150
+    
+    for i, (name, time) in enumerate(scores, 1):
+        score_text = f"{i}. {name} - Time Survived: {time}s"
+        label = makeLabel(score_text, 30, screenCentre[0] - 200, startY + (i * 40),
+                         fontColour='white', font='Arial', background='clear')
+        showLabel(label)
+        scoreLabels.append(label)
+
+def getPlayerName():
+    backgroundSprite = makeSprite("blue.png")   
+    moveSprite(backgroundSprite, screenCentre[0], screenCentre[1], True)
+    showSprite(backgroundSprite)
+    
+    title = makeLabel("Enter Your Name:", 50, screenCentre[0] - 150, 100,
+                     fontColour='white', font='Arial', background='clear')
+    showLabel(title)
+
+    inputBox = makeTextBox(screenCentre[0] - 100, 200, 200, 
+                          startingText="Type name here", 
+                          maxLength=15, 
+                          fontSize=30)
+
+    name = textBoxInput(inputBox)
+
+    addScore(name, frameCount // 30)
+    
+    hideLabel(title)
+    hideSprite(backgroundSprite)
+    hideTextBox(inputBox)
+    
 l = makeLabel("Time Alive: " + str(frameCount // 30), 20, 15, 100, fontColour='black', font='Arial', background='clear')
 showLabel(l)
 
@@ -280,6 +332,10 @@ time.sleep(3)
 makeMusic("bgmusic.mp3")
 playMusic(-1)
 
+createLeaderboardTable()
+addScore("Ben",20)
+addScore("John",30)
+
 while True:
     frameCount += 1
     showSprite(thePlayer.sprite)
@@ -289,7 +345,6 @@ while True:
     
     
     thePlayer.move()
-    boundary(thePlayer)
     
     for spike in allSpikes:
         spike.update(thePlayer)
