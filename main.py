@@ -159,20 +159,20 @@ class Saver(Creature):
             stopMusic()
             lossSound = makeSound("lossTrack.mp3")
             playSound(lossSound)
-            
-            time.sleep(0.75)
-            hideSprite(Player.sprite)
-            
-            backgroundSprite = makeSprite("lose.png")
-            backgroundx = screenCentre[0]
-            backgroundy = screenCentre[1]
-            moveSprite(backgroundSprite, backgroundx, backgroundy, True)
-            showSprite(backgroundSprite)
-            
-            time.sleep(4)
-            
-            showLeaderboard()
 
+            hideSprite(Player.sprite)
+  
+            loseScreen = makeSprite("lose.png")
+            moveSprite(loseScreen, screenCentre[0], screenCentre[1], True)
+            showSprite(loseScreen)
+
+            updateDisplay()
+            
+            tick(120)  
+
+            hideSprite(loseScreen)
+
+            showLeaderboard()
             updateDisplay()
 
         if self.isNear(Player):
@@ -331,10 +331,6 @@ playSound(spawnInSound)
 time.sleep(3)
 makeMusic("bgmusic.mp3")
 playMusic(-1)
-
-createLeaderboardTable()
-addScore("Ben",20)
-addScore("John",30)
 
 while True:
     frameCount += 1
